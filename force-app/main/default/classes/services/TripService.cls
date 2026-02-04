@@ -55,4 +55,15 @@ public with sharing class TripService {
 
         insert toInsert;
     }
+
+    // GGT-03: validation dates Trip
+    public static void validateTripDates(List<Trip__c> trips) {
+        for (Trip__c t : trips) {
+            if (t.Start_Date__c != null && t.End_Date__c != null) {
+                if (t.End_Date__c <= t.Start_Date__c) {
+                    t.End_Date__c.addError('La date de fin doit être postérieure à la date de début.');
+                }
+            }
+        }
+    }
 }
