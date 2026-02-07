@@ -1,16 +1,16 @@
 public with sharing class TripService {
 
-    // GGT-02: Quand une Opportunity devient gagnée, créer un Trip lié.
+    // GGT-02: Quand une Opportunity devient 'closed won', créer un Trip lié.
     public static void createTripsFromClosedWon(List<Opportunity> newList, Map<Id, Opportunity> oldMap) {
 
-        // 1) Filtrer : uniquement les opps qui viennent de passer IsWon = true
+        // Filtrer : uniquement les opps qui viennent de passer IsWon = true
         Set<Id> oppIdsToCheck = new Set<Id>();
         List<Opportunity> wonOpps = new List<Opportunity>();
 
         for (Opportunity o : newList) {
             Opportunity oldO = oldMap.get(o.Id);
 
-            Boolean justBecameWon = (o.IsWon == true) && (oldO == null || oldO.IsWon == false);
+            Boolean justBecameWon = (o.IsWon == true) && (oldO.IsWon == false);
             if (justBecameWon) {
                 wonOpps.add(o);
                 oppIdsToCheck.add(o.Id);
@@ -19,7 +19,7 @@ public with sharing class TripService {
 
         if (wonOpps.isEmpty()) return;
 
-        // 2) Anti-duplicate : si un Trip existe déjà pour l’Opportunity, ne pas recréer
+        // Anti-duplicate : si un Trip existe déjà pour l’Opportunity, ne pas recréer
         Map<Id, Trip__c> existingByOpp = new Map<Id, Trip__c>();
         for (Trip__c t : [
             SELECT Id, Opportunity__c
@@ -29,10 +29,18 @@ public with sharing class TripService {
             existingByOpp.put(t.Opportunity__c, t);
         }
 
-        // 3) Créer les Trips
+        // Créer les Trips
         List<Trip__c> toInsert = new List<Trip__c>();
 
         for (Opportunity o : wonOpps) {
+            // message pour l’utilisateur lors du prob des dates
+            if (o.Start_Date__c != null && o.End_Date__c != null) {
+                if (o.End_Date__c <= o.Start_Date__c) {
+                    o.addError('La date de fin du voyage doit être postérieure à la date de début.');
+                    continue;
+                }
+            }
+
             if (existingByOpp.containsKey(o.Id)) continue;
 
             Trip__c t = new Trip__c();
@@ -50,7 +58,6 @@ public with sharing class TripService {
 
         if (toInsert.isEmpty()) return;
 
-        // 4) CRUD check basique
         if (!Schema.sObjectType.Trip__c.isCreateable()) return;
 
         insert toInsert;
@@ -61,7 +68,7 @@ public with sharing class TripService {
         for (Trip__c t : trips) {
             if (t.Start_Date__c != null && t.End_Date__c != null) {
                 if (t.End_Date__c <= t.Start_Date__c) {
-                    t.End_Date__c.addError('La date de fin doit être postérieure à la date de début.');
+                    t.addError('La date de fin doit être postérieure à la date de début.');
                 }
             }
         }
