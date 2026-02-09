@@ -1,6 +1,6 @@
 public with sharing class TripCancellationBatch implements Database.Batchable<SObject> {
 
-    // start() : définit les records à traiter
+    // start()
     public Database.QueryLocator start(Database.BatchableContext bc) {
 
         Date targetDate = Date.today().addDays(7);
@@ -13,7 +13,7 @@ public with sharing class TripCancellationBatch implements Database.Batchable<SO
         ]);
     }
 
-    // execute() : logique métier
+    // execute()
     public void execute(Database.BatchableContext bc, List<Trip__c> scope) {
 
         List<Trip__c> tripsToUpdate = new List<Trip__c>();
@@ -33,7 +33,7 @@ public with sharing class TripCancellationBatch implements Database.Batchable<SO
         }
     }
 
-    // finish() : optionnel
+    // finish()
     public void finish(Database.BatchableContext bc) {
         System.debug('TripCancellationBatch terminé');
     }
